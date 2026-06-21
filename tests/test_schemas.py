@@ -60,7 +60,9 @@ Some content here
             "evidence_class": "primary",
             "venue": "NeurIPS",
             "locator": "arXiv:1706.03762",
-            "review_notes": "First Transformer paper."
+            "review_notes": "First Transformer paper.",
+            "peer_reviewed": True,
+            "reliability_rating": "high"
         }
         validate(instance=valid_source, schema=self.source_schema)
 
@@ -133,11 +135,15 @@ class TestClaimBusinessRules(unittest.TestCase):
         self.sources_info = {
             "source-primary-2017": {
                 "source_id": "source-primary-2017",
-                "evidence_class": "primary"
+                "evidence_class": "primary",
+                "peer_reviewed": True,
+                "reliability_rating": "high"
             },
             "source-secondary-2018": {
                 "source_id": "source-secondary-2018",
-                "evidence_class": "secondary"
+                "evidence_class": "secondary",
+                "peer_reviewed": False,
+                "reliability_rating": "medium"
             }
         }
 
@@ -223,7 +229,9 @@ class TestCitationBusinessRules(unittest.TestCase):
         self.sources_info = {
             "source-primary-2017": {
                 "source_id": "source-primary-2017",
-                "evidence_class": "primary"
+                "evidence_class": "primary",
+                "peer_reviewed": True,
+                "reliability_rating": "high"
             }
         }
         self.claims_info = {

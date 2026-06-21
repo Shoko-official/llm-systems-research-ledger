@@ -8,6 +8,8 @@ evidence_class: primary
 venue: "Journal of Neutral Results"
 locator: "https://example.org/alpha-2026"
 review_notes: "A primary reference for the alpha placeholder methodology."
+peer_reviewed: true
+reliability_rating: high
 ---
 # The Alpha Method
 

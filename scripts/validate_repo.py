@@ -276,6 +276,26 @@ def verify_claim_business_rules(claim_id: str, front_matter: dict, sources_info:
         if not has_primary:
             raise ValueError(f"Claim {claim_id} requires a primary source, but none of its referenced sources are of class 'primary'.")
 
+    # 7. Verify claims have required academic backing (at least one peer-reviewed source)
+    if paper_readiness == "ready" and evidence_state == "supported":
+        has_peer_reviewed = any(
+            sources_info[ref_id].get("peer_reviewed") is True
+            for ref_id in source_references
+            if ref_id in sources_info
+        )
+        if not has_peer_reviewed:
+            raise ValueError(f"Claim {claim_id} is ready for paper use but lacks academic backing (no peer-reviewed sources).")
+
+    # 8. Verify source reliability rating is high or medium for supported claims
+    if evidence_state == "supported":
+        has_reliable = any(
+            sources_info[ref_id].get("reliability_rating") in ("high", "medium")
+            for ref_id in source_references
+            if ref_id in sources_info
+        )
+        if not has_reliable:
+            raise ValueError(f"Claim {claim_id} is supported but lacks a source with high or medium reliability rating.")
+
 
 def get_all_claims() -> dict[str, dict]:
     claims_info = {}
