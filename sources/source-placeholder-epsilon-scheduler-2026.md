@@ -8,6 +8,8 @@ evidence_class: primary
 venue: "Workshop on Sandbox Schedulers"
 locator: "https://example.org/epsilon-2026"
 review_notes: "A primary reference for the epsilon resource scheduler."
+peer_reviewed: true
+reliability_rating: high
 ---
 # Epsilon Scheduler
 

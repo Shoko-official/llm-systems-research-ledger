@@ -8,6 +8,8 @@ evidence_class: primary
 venue: "Symposium on Theoretical Placeholders"
 locator: "https://example.org/delta-2026"
 review_notes: "A primary reference for the delta convergence optimizer."
+peer_reviewed: true
+reliability_rating: high
 ---
 # Delta Optimizer
 

@@ -8,6 +8,8 @@ evidence_class: primary
 venue: "Archive of Generic Computer Science"
 locator: "https://example.org/gamma-2026"
 review_notes: "A primary reference for the gamma integration framework."
+peer_reviewed: true
+reliability_rating: high
 ---
 # Gamma Framework
 
