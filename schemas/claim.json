@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ClaimSchema",
+  "description": "Schema for claim records in the research ledger.",
+  "type": "object",
+  "properties": {
+    "claim_id": {
+      "type": "string",
+      "pattern": "^claim-[a-z0-9-]+$",
+      "description": "Stable local identifier, e.g. claim-transformer-attention-parallelism."
+    },
+    "claim_text": {
+      "type": "string",
+      "description": "One precise statement."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "supported", "disputed", "retired"],
+      "description": "Status of the claim."
+    },
+    "evidence_state": {
+      "type": "string",
+      "enum": ["supported", "partial", "TODO:evidence_needed", "not_applicable"],
+      "description": "Evidence state of the claim."
+    },
+    "source_references": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Source IDs from sources/, not raw links."
+    },
+    "primary_source_required": {
+      "type": "string",
+      "enum": ["yes", "no"],
+      "description": "Whether a primary source is required."
+    },
+    "review_notes": {
+      "type": "string",
+      "description": "Short notes about caveats, uncertainty, or follow-up."
+    },
+    "paper_readiness": {
+      "type": "string",
+      "enum": ["not_ready", "candidate", "ready"],
+      "description": "Paper readiness status."
+    }
+  },
+  "required": [
+    "claim_id",
+    "claim_text",
+    "status",
+    "evidence_state",
+    "source_references",
+    "primary_source_required",
+    "review_notes",
+    "paper_readiness"
+  ],
+  "additionalProperties": false
+}

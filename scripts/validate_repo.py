@@ -21,9 +21,11 @@ REQUIRED_FILES = [
     "citations/README.md",
     "schemas/README.md",
     "schemas/source.json",
+    "schemas/claim.json",
     "sources/README.md",
     "tests/README.md",
 ]
+
 
 
 REQUIRED_DIRECTORIES = [
@@ -167,10 +169,51 @@ def validate_source_records() -> None:
             fail(f"Filename '{path.name}' does not match source_id '{source_id}'. Expected '{expected_filename}'.")
 
 
+def validate_claim_records() -> None:
+    claim_dir = ROOT / "claims"
+    schema_path = ROOT / "schemas" / "claim.json"
+    if not schema_path.is_file():
+        return
+
+    with open(schema_path, "r", encoding="utf-8") as f:
+        schema = json.load(f)
+
+    for path in claim_dir.glob("*.md"):
+        if path.name.lower() == "readme.md":
+            continue
+
+        text = read_text(path)
+        try:
+            front_matter = parse_front_matter(text)
+        except Exception as e:
+            fail(f"Invalid YAML front matter in claims/{path.name}: {e}")
+
+        if front_matter is None:
+            fail(f"Missing YAML front matter in claims/{path.name}. Claim records must start and end with '---'.")
+
+        try:
+            validate(instance=front_matter, schema=schema)
+        except ValidationError as e:
+            fail(f"Validation error in claims/{path.name}: {e.message}")
+
+        claim_id = front_matter.get("claim_id")
+        expected_filename = f"{claim_id}.md"
+        if path.name != expected_filename:
+            fail(f"Filename '{path.name}' does not match claim_id '{claim_id}'. Expected '{expected_filename}'.")
+
+        source_references = front_matter.get("source_references", [])
+        for ref_id in source_references:
+            ref_path = ROOT / "sources" / f"{ref_id}.md"
+            if not ref_path.is_file():
+                fail(f"Referenced source '{ref_id}' in claims/{path.name} does not exist at sources/{ref_id}.md")
+
+
 def run_validate() -> None:
     validate_required_paths()
     validate_foundation_files()
     validate_source_records()
+    validate_claim_records()
+
 
 
 
