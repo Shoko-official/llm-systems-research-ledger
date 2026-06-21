@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CitationSchema",
+  "description": "Schema for citation records in the research ledger.",
+  "type": "object",
+  "properties": {
+    "citation_id": {
+      "type": "string",
+      "pattern": "^citation-[a-z0-9-]+$",
+      "description": "Stable local identifier for the citation placeholder, e.g. citation-attention-2017."
+    },
+    "source_id": {
+      "type": "string",
+      "pattern": "^source-[a-z0-9-]+-[0-9]{4}$",
+      "description": "Referenced source ID from sources/."
+    },
+    "claim_id": {
+      "type": ["string", "null"],
+      "pattern": "^claim-[a-z0-9-]+$",
+      "description": "Referenced claim ID from claims/, if applicable."
+    },
+    "paper_section_target": {
+      "type": "string",
+      "description": "Target section in the paper, e.g. sections/introduction.md."
+    },
+    "readiness_state": {
+      "type": "string",
+      "enum": ["ready_for_bibliography", "missing_citation_detail", "missing_evidence", "blocked"],
+      "description": "Readiness state of the citation."
+    },
+    "missing_citation_detail": {
+      "type": ["string", "null"],
+      "description": "Details about missing citation information."
+    }
+  },
+  "required": [
+    "citation_id",
+    "source_id",
+    "claim_id",
+    "paper_section_target",
+    "readiness_state",
+    "missing_citation_detail"
+  ],
+  "additionalProperties": false
+}
