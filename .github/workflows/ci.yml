@@ -23,8 +23,12 @@ jobs:
         with:
           python-version: "3.x"
 
+      - name: Install dependencies
+        run: pip install jsonschema pyyaml
+
       - name: Validate
         run: make validate
+
 
       - name: Lint
         run: make lint
