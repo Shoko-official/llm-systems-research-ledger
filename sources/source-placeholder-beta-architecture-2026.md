@@ -8,6 +8,8 @@ evidence_class: primary
 venue: "Proceedings of the Placeholder Conference"
 locator: "https://example.org/beta-2026"
 review_notes: "A primary reference for the beta architectural patterns."
+peer_reviewed: true
+reliability_rating: high
 ---
 # Beta Architecture
 

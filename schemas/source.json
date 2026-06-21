@@ -48,6 +48,15 @@
     "review_notes": {
       "type": "string",
       "description": "Short notes about relevance, limitations, or caveats."
+    },
+    "peer_reviewed": {
+      "type": "boolean",
+      "description": "Whether the source is peer-reviewed."
+    },
+    "reliability_rating": {
+      "type": "string",
+      "enum": ["high", "medium", "low"],
+      "description": "Reliability rating of the source."
     }
   },
   "required": [
@@ -59,7 +68,9 @@
     "evidence_class",
     "venue",
     "locator",
-    "review_notes"
+    "review_notes",
+    "peer_reviewed",
+    "reliability_rating"
   ],
   "additionalProperties": false
 }
