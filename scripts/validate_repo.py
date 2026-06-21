@@ -22,6 +22,7 @@ REQUIRED_FILES = [
     "schemas/README.md",
     "schemas/source.json",
     "schemas/claim.json",
+    "schemas/citation.json",
     "sources/README.md",
     "tests/README.md",
     "tests/test_schemas.py",
@@ -276,12 +277,95 @@ def verify_claim_business_rules(claim_id: str, front_matter: dict, sources_info:
             raise ValueError(f"Claim {claim_id} requires a primary source, but none of its referenced sources are of class 'primary'.")
 
 
+def get_all_claims() -> dict[str, dict]:
+    claims_info = {}
+    claim_dir = ROOT / "claims"
+    schema_path = ROOT / "schemas" / "claim.json"
+    if not schema_path.is_file():
+        return claims_info
+
+    for path in claim_dir.glob("*.md"):
+        if path.name.lower() == "readme.md":
+            continue
+
+        text = read_text(path)
+        try:
+            front_matter = parse_front_matter(text)
+            if front_matter:
+                claim_id = front_matter.get("claim_id")
+                claims_info[claim_id] = front_matter
+        except Exception:
+            pass
+    return claims_info
+
+
+def validate_citation_records() -> None:
+    citation_dir = ROOT / "citations"
+    schema_path = ROOT / "schemas" / "citation.json"
+    if not schema_path.is_file():
+        return
+
+    with open(schema_path, "r", encoding="utf-8") as f:
+        schema = json.load(f)
+
+    sources_info = get_all_sources()
+    claims_info = get_all_claims()
+
+    for path in citation_dir.glob("*.md"):
+        if path.name.lower() == "readme.md":
+            continue
+
+        text = read_text(path)
+        try:
+            front_matter = parse_front_matter(text)
+        except Exception as e:
+            fail(f"Invalid YAML front matter in citations/{path.name}: {e}")
+
+        if front_matter is None:
+            fail(f"Missing YAML front matter in citations/{path.name}. Citation records must start and end with '---'.")
+
+        try:
+            validate(instance=front_matter, schema=schema)
+        except ValidationError as e:
+            fail(f"Validation error in citations/{path.name}: {e.message}")
+
+        citation_id = front_matter.get("citation_id")
+        expected_filename = f"{citation_id}.md"
+        if path.name != expected_filename:
+            fail(f"Filename '{path.name}' does not match citation_id '{citation_id}'. Expected '{expected_filename}'.")
+
+        try:
+            verify_citation_business_rules(citation_id, front_matter, sources_info, claims_info)
+        except ValueError as e:
+            fail(f"Validation error in citations/{path.name}: {e}")
+
+
+def verify_citation_business_rules(citation_id: str, front_matter: dict, sources_info: dict, claims_info: dict) -> None:
+    source_id = front_matter.get("source_id")
+    claim_id = front_matter.get("claim_id")
+    readiness_state = front_matter.get("readiness_state")
+    missing_detail = front_matter.get("missing_citation_detail")
+
+    # 1. Validate source_id exists
+    if source_id not in sources_info:
+        raise ValueError(f"Referenced source '{source_id}' does not exist.")
+
+    # 2. Validate claim_id exists if not null
+    if claim_id is not None and claim_id not in claims_info:
+        raise ValueError(f"Referenced claim '{claim_id}' does not exist.")
+
+    # 3. If readiness_state is ready_for_bibliography, missing_citation_detail should be null or "None"
+    if readiness_state == "ready_for_bibliography":
+        if missing_detail is not None and str(missing_detail).strip().lower() != "none" and str(missing_detail).strip() != "":
+            raise ValueError(f"Citation {citation_id} cannot be 'ready_for_bibliography' with missing detail: '{missing_detail}'.")
+
 
 def run_validate() -> None:
     validate_required_paths()
     validate_foundation_files()
     validate_source_records()
     validate_claim_records()
+    validate_citation_records()
 
 
 
