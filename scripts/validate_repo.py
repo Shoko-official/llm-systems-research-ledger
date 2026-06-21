@@ -1,9 +1,9 @@
-from __future__ import annotations
-
+import json
 import re
 import sys
 from pathlib import Path
 
+from jsonschema import validate, ValidationError
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -20,9 +20,11 @@ REQUIRED_FILES = [
     "claims/README.md",
     "citations/README.md",
     "schemas/README.md",
+    "schemas/source.json",
     "sources/README.md",
     "tests/README.md",
 ]
+
 
 REQUIRED_DIRECTORIES = [
     ".github",
@@ -120,6 +122,58 @@ def validate_foundation_files() -> None:
             )
 
 
+def parse_front_matter(text: str) -> dict | None:
+    match = re.match(r"^---\s*\n(.*?)\n---\s*(?:\n|$)", text, re.DOTALL)
+    if not match:
+        return None
+    yaml_content = match.group(1)
+    import yaml
+    try:
+        return yaml.safe_load(yaml_content)
+    except Exception as e:
+        raise ValueError(f"YAML parsing error: {e}")
+
+
+def validate_source_records() -> None:
+    source_dir = ROOT / "sources"
+    schema_path = ROOT / "schemas" / "source.json"
+    if not schema_path.is_file():
+        return
+
+    with open(schema_path, "r", encoding="utf-8") as f:
+        schema = json.load(f)
+
+    for path in source_dir.glob("*.md"):
+        if path.name.lower() == "readme.md":
+            continue
+
+        text = read_text(path)
+        try:
+            front_matter = parse_front_matter(text)
+        except Exception as e:
+            fail(f"Invalid YAML front matter in sources/{path.name}: {e}")
+
+        if front_matter is None:
+            fail(f"Missing YAML front matter in sources/{path.name}. Source records must start and end with '---'.")
+
+        try:
+            validate(instance=front_matter, schema=schema)
+        except ValidationError as e:
+            fail(f"Validation error in sources/{path.name}: {e.message}")
+
+        source_id = front_matter.get("source_id")
+        expected_filename = f"{source_id}.md"
+        if path.name != expected_filename:
+            fail(f"Filename '{path.name}' does not match source_id '{source_id}'. Expected '{expected_filename}'.")
+
+
+def run_validate() -> None:
+    validate_required_paths()
+    validate_foundation_files()
+    validate_source_records()
+
+
+
 def lint_text() -> None:
     for path in iter_text_files():
         text = read_text(path)
@@ -129,13 +183,9 @@ def lint_text() -> None:
                 fail(f"possible secret in {relative}: {pattern.pattern}")
 
 
-def run_validate() -> None:
-    validate_required_paths()
-    validate_foundation_files()
-
-
 def run_lint() -> None:
     lint_text()
+
 
 
 def run_test() -> None:

@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SourceSchema",
+  "description": "Schema for source records in the research ledger.",
+  "type": "object",
+  "properties": {
+    "source_id": {
+      "type": "string",
+      "pattern": "^source-[a-z0-9-]+-[0-9]{4}$",
+      "description": "Stable local identifier, e.g. source-attention-is-all-you-need-2017."
+    },
+    "title": {
+      "type": "string",
+      "description": "Source title."
+    },
+    "authors": {
+      "type": "string",
+      "description": "Author list as written in the source."
+    },
+    "year": {
+      "type": "integer",
+      "minimum": 1900,
+      "maximum": 2100,
+      "description": "Publication or release year."
+    },
+    "source_type": {
+      "type": "string",
+      "enum": ["paper", "report", "documentation", "benchmark", "dataset", "blog post", "other"],
+      "description": "Type of source."
+    },
+    "evidence_class": {
+      "type": "string",
+      "enum": ["primary", "secondary"],
+      "description": "Evidence class: primary or secondary."
+    },
+    "venue": {
+      "type": "string",
+      "description": "Conference, journal, arXiv, organization, or website."
+    },
+    "locator": {
+      "type": "string",
+      "description": "DOI, arXiv ID, URL, repository link, or other stable locator."
+    },
+    "access_date": {
+      "type": ["string", "null"],
+      "description": "Date checked, only when mutable locator is web-based."
+    },
+    "review_notes": {
+      "type": "string",
+      "description": "Short notes about relevance, limitations, or caveats."
+    }
+  },
+  "required": [
+    "source_id",
+    "title",
+    "authors",
+    "year",
+    "source_type",
+    "evidence_class",
+    "venue",
+    "locator",
+    "review_notes"
+  ],
+  "additionalProperties": false
+}
