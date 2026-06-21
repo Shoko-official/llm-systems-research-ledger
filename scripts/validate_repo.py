@@ -24,7 +24,9 @@ REQUIRED_FILES = [
     "schemas/claim.json",
     "sources/README.md",
     "tests/README.md",
+    "tests/test_schemas.py",
 ]
+
 
 
 
@@ -229,42 +231,50 @@ def validate_claim_records() -> None:
         if path.name != expected_filename:
             fail(f"Filename '{path.name}' does not match claim_id '{claim_id}'. Expected '{expected_filename}'.")
 
-        status = front_matter.get("status")
-        evidence_state = front_matter.get("evidence_state")
-        source_references = front_matter.get("source_references", [])
-        primary_source_required = front_matter.get("primary_source_required")
-        paper_readiness = front_matter.get("paper_readiness")
+        try:
+            verify_claim_business_rules(claim_id, front_matter, sources_info)
+        except ValueError as e:
+            fail(f"Validation error in claims/{path.name}: {e}")
 
-        # 1. Do not promote a claim to paper-ready status while its evidence state is TODO:evidence_needed
-        if paper_readiness == "ready" and evidence_state == "TODO:evidence_needed":
-            fail(f"Claim {claim_id} cannot be paper-ready ('ready') while evidence state is 'TODO:evidence_needed'.")
 
-        # 2. Use TODO:evidence_needed whenever a claim lacks a usable source (i.e. source_references is empty)
-        if not source_references and evidence_state != "TODO:evidence_needed":
-            fail(f"Claim {claim_id} has no source references, so its evidence state must be 'TODO:evidence_needed' (got '{evidence_state}').")
+def verify_claim_business_rules(claim_id: str, front_matter: dict, sources_info: dict) -> None:
+    status = front_matter.get("status")
+    evidence_state = front_matter.get("evidence_state")
+    source_references = front_matter.get("source_references", [])
+    primary_source_required = front_matter.get("primary_source_required")
+    paper_readiness = front_matter.get("paper_readiness")
 
-        # 3. If evidence state is supported or partial, source_references must NOT be empty
-        if evidence_state in ("supported", "partial") and not source_references:
-            fail(f"Claim {claim_id} has evidence state '{evidence_state}' but no source references.")
+    # 1. Do not promote a claim to paper-ready status while its evidence state is TODO:evidence_needed
+    if paper_readiness == "ready" and evidence_state == "TODO:evidence_needed":
+        raise ValueError(f"Claim {claim_id} cannot be paper-ready ('ready') while evidence state is 'TODO:evidence_needed'.")
 
-        # 4. Use supported only when the claim has enough evidence for its current purpose
-        if status == "supported" and evidence_state in ("TODO:evidence_needed", "not_applicable"):
-            fail(f"Claim {claim_id} cannot have status 'supported' with evidence state '{evidence_state}'.")
+    # 2. Use TODO:evidence_needed whenever a claim lacks a usable source (i.e. source_references is empty)
+    if not source_references and evidence_state != "TODO:evidence_needed":
+        raise ValueError(f"Claim {claim_id} has no source references, so its evidence state must be 'TODO:evidence_needed' (got '{evidence_state}').")
 
-        # 5. Validate that referenced sources exist
-        for ref_id in source_references:
-            if ref_id not in sources_info:
-                fail(f"Referenced source '{ref_id}' in claims/{path.name} does not exist at sources/{ref_id}.md")
+    # 3. If evidence state is supported or partial, source_references must NOT be empty
+    if evidence_state in ("supported", "partial") and not source_references:
+        raise ValueError(f"Claim {claim_id} has evidence state '{evidence_state}' but no source references.")
 
-        # 6. If primary source required is yes and evidence state is supported, at least one referenced source must be primary
-        if primary_source_required == "yes" and evidence_state == "supported":
-            has_primary = any(
-                sources_info[ref_id].get("evidence_class") == "primary"
-                for ref_id in source_references
-                if ref_id in sources_info
-            )
-            if not has_primary:
-                fail(f"Claim {claim_id} requires a primary source, but none of its referenced sources are of class 'primary'.")
+    # 4. Use supported only when the claim has enough evidence for its current purpose
+    if status == "supported" and evidence_state in ("TODO:evidence_needed", "not_applicable"):
+        raise ValueError(f"Claim {claim_id} cannot have status 'supported' with evidence state '{evidence_state}'.")
+
+    # 5. Validate that referenced sources exist
+    for ref_id in source_references:
+        if ref_id not in sources_info:
+            raise ValueError(f"Referenced source '{ref_id}' does not exist.")
+
+    # 6. If primary source required is yes and evidence state is supported, at least one referenced source must be primary
+    if primary_source_required == "yes" and evidence_state == "supported":
+        has_primary = any(
+            sources_info[ref_id].get("evidence_class") == "primary"
+            for ref_id in source_references
+            if ref_id in sources_info
+        )
+        if not has_primary:
+            raise ValueError(f"Claim {claim_id} requires a primary source, but none of its referenced sources are of class 'primary'.")
+
 
 
 def run_validate() -> None:
@@ -290,10 +300,20 @@ def run_lint() -> None:
     lint_text()
 
 
+def run_unit_tests() -> None:
+    import unittest
+    suite = unittest.defaultTestLoader.discover(str(ROOT / "tests"), pattern="test_*.py")
+    runner = unittest.TextTestRunner(verbosity=2)
+    result = runner.run(suite)
+    if not result.wasSuccessful():
+        fail("Unit tests failed.")
+
 
 def run_test() -> None:
     run_validate()
     run_lint()
+    run_unit_tests()
+
 
 
 def main(argv: list[str]) -> int:
