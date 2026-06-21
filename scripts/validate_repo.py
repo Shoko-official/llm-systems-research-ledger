@@ -169,6 +169,32 @@ def validate_source_records() -> None:
             fail(f"Filename '{path.name}' does not match source_id '{source_id}'. Expected '{expected_filename}'.")
 
 
+def get_all_sources() -> dict[str, dict]:
+    sources_info = {}
+    source_dir = ROOT / "sources"
+    schema_path = ROOT / "schemas" / "source.json"
+    if not schema_path.is_file():
+        return sources_info
+
+    with open(schema_path, "r", encoding="utf-8") as f:
+        schema = json.load(f)
+
+    for path in source_dir.glob("*.md"):
+        if path.name.lower() == "readme.md":
+            continue
+
+        text = read_text(path)
+        try:
+            front_matter = parse_front_matter(text)
+            if front_matter:
+                source_id = front_matter.get("source_id")
+                sources_info[source_id] = front_matter
+        except Exception:
+            # Let validate_source_records report errors
+            pass
+    return sources_info
+
+
 def validate_claim_records() -> None:
     claim_dir = ROOT / "claims"
     schema_path = ROOT / "schemas" / "claim.json"
@@ -177,6 +203,8 @@ def validate_claim_records() -> None:
 
     with open(schema_path, "r", encoding="utf-8") as f:
         schema = json.load(f)
+
+    sources_info = get_all_sources()
 
     for path in claim_dir.glob("*.md"):
         if path.name.lower() == "readme.md":
@@ -201,11 +229,42 @@ def validate_claim_records() -> None:
         if path.name != expected_filename:
             fail(f"Filename '{path.name}' does not match claim_id '{claim_id}'. Expected '{expected_filename}'.")
 
+        status = front_matter.get("status")
+        evidence_state = front_matter.get("evidence_state")
         source_references = front_matter.get("source_references", [])
+        primary_source_required = front_matter.get("primary_source_required")
+        paper_readiness = front_matter.get("paper_readiness")
+
+        # 1. Do not promote a claim to paper-ready status while its evidence state is TODO:evidence_needed
+        if paper_readiness == "ready" and evidence_state == "TODO:evidence_needed":
+            fail(f"Claim {claim_id} cannot be paper-ready ('ready') while evidence state is 'TODO:evidence_needed'.")
+
+        # 2. Use TODO:evidence_needed whenever a claim lacks a usable source (i.e. source_references is empty)
+        if not source_references and evidence_state != "TODO:evidence_needed":
+            fail(f"Claim {claim_id} has no source references, so its evidence state must be 'TODO:evidence_needed' (got '{evidence_state}').")
+
+        # 3. If evidence state is supported or partial, source_references must NOT be empty
+        if evidence_state in ("supported", "partial") and not source_references:
+            fail(f"Claim {claim_id} has evidence state '{evidence_state}' but no source references.")
+
+        # 4. Use supported only when the claim has enough evidence for its current purpose
+        if status == "supported" and evidence_state in ("TODO:evidence_needed", "not_applicable"):
+            fail(f"Claim {claim_id} cannot have status 'supported' with evidence state '{evidence_state}'.")
+
+        # 5. Validate that referenced sources exist
         for ref_id in source_references:
-            ref_path = ROOT / "sources" / f"{ref_id}.md"
-            if not ref_path.is_file():
+            if ref_id not in sources_info:
                 fail(f"Referenced source '{ref_id}' in claims/{path.name} does not exist at sources/{ref_id}.md")
+
+        # 6. If primary source required is yes and evidence state is supported, at least one referenced source must be primary
+        if primary_source_required == "yes" and evidence_state == "supported":
+            has_primary = any(
+                sources_info[ref_id].get("evidence_class") == "primary"
+                for ref_id in source_references
+                if ref_id in sources_info
+            )
+            if not has_primary:
+                fail(f"Claim {claim_id} requires a primary source, but none of its referenced sources are of class 'primary'.")
 
 
 def run_validate() -> None:
@@ -213,6 +272,7 @@ def run_validate() -> None:
     validate_foundation_files()
     validate_source_records()
     validate_claim_records()
+
 
 
 
