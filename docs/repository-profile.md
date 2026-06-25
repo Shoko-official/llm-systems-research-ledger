@@ -8,7 +8,7 @@ This profile records the current role of `llm-systems-research-ledger` in the Mo
 | Owner | [Shoko-official](https://github.com/Shoko-official) |
 | Role | Structured registry for primary research sources, claims, and citations |
 | Default branch | [main](https://github.com/Shoko-official/llm-systems-research-ledger/tree/main) |
-| Active milestone | Milestone 1: Research Ledger Alignment |
+| Active milestone | Milestone 8: Agent Runtime and Multi-Agent Research |
 | Issues | [llm-systems-research-ledger issues](https://github.com/Shoko-official/llm-systems-core/issues) |
 | Current focus | Establishing verifiable primary sources and claims for paper compiling |
 | Main issue types | research, schema, validation, citations, docs, ci |
@@ -25,3 +25,10 @@ This repository acts as the auditable registry of research facts. It does not im
 | Pull request required | Yes |
 | Required approvals | 1 |
 | Status checks required | Yes |
+
+## Research Ledger Statistics
+
+| Metric | Milestone 8 Count | Total Repository Count |
+|---|---|---|
+| Sources | 6 | 13 |
+| Claims | 5 | 14 |
